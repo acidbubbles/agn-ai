@@ -118,22 +118,6 @@ const CharacterList: Component = () => {
         title={
           <div class="flex w-full justify-between">
             <div>Characters</div>
-            <div class="flex text-base">
-              <div class="px-1">
-                <Button onClick={() => setImport(true)}>
-                  <Import />
-                  <span class="hidden sm:inline">Import</span>
-                </Button>
-              </div>
-              <div class="px-1">
-                <A href="/character/create">
-                  <Button>
-                    <Plus />
-                    <span class="hidden sm:inline">Create</span>
-                  </Button>
-                </A>
-              </div>
-            </div>
           </div>
         }
       />

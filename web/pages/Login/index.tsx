@@ -55,19 +55,6 @@ const LoginPage: Component = () => {
           </Alert>
         </Show>
       </div>
-      <div class="mt-8 w-full gap-4">
-        <p class="flex justify-center text-xl text-[var(--hl-400)]">Why register?</p>
-        <div class="flex flex-col items-center">
-          <p>
-            You don't need to register to use Agnaistic. You can use it anonymously and no data will
-            be stored on any servers.
-          </p>
-          <p>
-            If you choose to register your data will be stored and accessible on any devices you
-            login with.
-          </p>
-        </div>
-      </div>
     </div>
   )
 }
