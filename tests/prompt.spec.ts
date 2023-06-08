@@ -317,6 +317,37 @@ describe('Prompt building', () => {
   })
 })
 
+describe('Prompt building with template', () => {
+  it('will build a basic prompt', () => {
+    const template = `{# nunjucks #}
+{%- if persona -%}{{char}}'s Persona: {{persona}}{{br}}{%- endif -%}
+{%- if scenario -%}Scenario: {{scenario}}{{br}}{%- endif -%}
+{%- if example_dialogue -%}Example of {{char}}'s dialogue:{{br}}
+{{example_dialogue}}{{br}}
+{%- endif -%}
+{{br}}
+<START>{{br}}
+{{history}}
+{{char}}:`
+    const actual = build([botMsg('FIRST'), toMsg('SECOND')], {
+      settings: { useGaslight: true, gaslight: template },
+    })
+    expect(actual.template).to.equal(
+      expected(
+        `Bot's Persona: PERSONA`,
+        'Scenario: SCENARIO',
+        `Example of Bot's dialogue:`,
+        'Bot: SAMPLE_CHAT',
+        '',
+        '<START>',
+        'Bot: FIRST',
+        'You: SECOND',
+        'Bot:'
+      )
+    )
+  })
+})
+
 function build(
   messages: AppSchema.ChatMessage[],
   opts: {

@@ -7,6 +7,7 @@ import { IMAGE_SUMMARY_PROMPT } from './image'
 import { buildMemoryPrompt } from './memory'
 import { defaultPresets, getFallbackPreset, isDefaultPreset } from './presets'
 import { Encoder } from './tokenize'
+import { HISTORY_PLACEHOLDER, processTemplate } from './prompt-template'
 
 export type PromptParts = {
   scenario?: string
@@ -113,13 +114,21 @@ export function createPrompt(opts: PromptOpts, encoder: Encoder) {
    */
   const lines = getLinesForPrompt(opts, encoder)
   const parts = getPromptParts(opts, lines, encoder)
-  const template = getTemplate(opts, parts)
-  const prompt = injectPlaceholders(template, {
-    opts,
-    parts,
-    history: { lines, order: 'desc' },
-    encoder,
-  })
+
+  let prompt: string
+  if (opts.settings?.useGaslight && opts.settings?.gaslight?.startsWith('{# nunjucks #}')) {
+    prompt = processTemplate(opts.settings.gaslight, opts, parts)
+    const historyStr = historyToStr({ lines, order: 'desc' }, opts, encoder, prompt)
+    prompt = prompt.replace(HISTORY_PLACEHOLDER, historyStr)
+  } else {
+    const template = getTemplate(opts, parts)
+    prompt = injectPlaceholders(template, {
+      opts,
+      parts,
+      history: { lines, order: 'desc' },
+      encoder,
+    })
+  }
   return { lines: lines.reverse(), parts, template: prompt }
 }
 
@@ -199,14 +208,25 @@ export function injectPlaceholders(
     .replace(SELF_REPLACE, sender)
 
   if (hist) {
-    const messages = hist.order === 'asc' ? hist.lines.slice().reverse() : hist.lines.slice()
-    const { adapter, model } = getAdapter(opts.chat, opts.user, opts.settings)
-    const maxContext = getContextLimit(opts.settings, adapter, model)
-    const history = fillPromptWithLines(encoder, maxContext, prompt, messages).reverse()
-    prompt = prompt.replace(HOLDERS.history, history.join('\n'))
+    const historyStr = historyToStr(hist, opts, encoder, prompt)
+    prompt = prompt.replace(HOLDERS.history, historyStr)
   }
 
   return prompt
+}
+
+function historyToStr(
+  hist: { lines: string[]; order: 'asc' | 'desc' },
+  opts: BuildPromptOpts,
+  encoder: Encoder,
+  prompt: string
+) {
+  const messages = hist.order === 'asc' ? hist.lines.slice().reverse() : hist.lines.slice()
+  const { adapter, model } = getAdapter(opts.chat, opts.user, opts.settings)
+  const maxContext = getContextLimit(opts.settings, adapter, model)
+  const history = fillPromptWithLines(encoder, maxContext, prompt, messages).reverse()
+  const historyStr = history.join('\n')
+  return historyStr
 }
 
 function removeUnusedPlaceholders(template: string, parts: PromptParts) {
